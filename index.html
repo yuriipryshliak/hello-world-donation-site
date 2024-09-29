@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hello World Donation Site</title>
-    <script src="https://js.stripe.com/v3/"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -14,49 +13,26 @@
             margin: 0 auto;
             text-align: center;
         }
-        #donation-button {
-            margin-top: 20px;
+        .donate-button {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 14px 20px;
+            margin: 20px 0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none;
+        }
+        .donate-button:hover {
+            background-color: #45a049;
         }
     </style>
 </head>
 <body>
     <h1>Hello World!</h1>
     <p>Welcome to my donation site. Your support is appreciated!</p>
-    <div id="donation-button"></div>
-
-    <script>
-        const stripe = Stripe('your_publishable_key'); // Replace with your actual Stripe publishable key
-
-        const paymentRequest = stripe.paymentRequest({
-            country: 'US',
-            currency: 'usd',
-            total: {
-                label: 'Donation',
-                amount: 500, // $5.00
-            },
-            requestPayerName: true,
-            requestPayerEmail: true,
-        });
-
-        const elements = stripe.elements();
-        const prButton = elements.create('paymentRequestButton', {
-            paymentRequest: paymentRequest,
-        });
-
-        paymentRequest.canMakePayment().then(function(result) {
-            if (result) {
-                prButton.mount('#donation-button');
-            } else {
-                document.getElementById('donation-button').innerHTML = 'Apple Pay is not available in your browser.';
-            }
-        });
-
-        paymentRequest.on('paymentmethod', function(ev) {
-            // In a real application, you would send this to your server
-            console.log('Payment received!', ev.paymentMethod);
-            alert('Thank you for your donation!');
-            ev.complete('success');
-        });
-    </script>
+    <a href="https://send.monobank.ua/jar/AX7aR6vBtf" class="donate-button" target="_blank">Donate via Monobank</a>
 </body>
 </html>
