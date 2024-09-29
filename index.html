@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello World Donation Site</title>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        #donation-button {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Hello World!</h1>
+    <p>Welcome to my donation site. Your support is appreciated!</p>
+    <div id="donation-button"></div>
+
+    <script>
+        const stripe = Stripe('your_publishable_key'); // Replace with your actual Stripe publishable key
+
+        const paymentRequest = stripe.paymentRequest({
+            country: 'US',
+            currency: 'usd',
+            total: {
+                label: 'Donation',
+                amount: 500, // $5.00
+            },
+            requestPayerName: true,
+            requestPayerEmail: true,
+        });
+
+        const elements = stripe.elements();
+        const prButton = elements.create('paymentRequestButton', {
+            paymentRequest: paymentRequest,
+        });
+
+        paymentRequest.canMakePayment().then(function(result) {
+            if (result) {
+                prButton.mount('#donation-button');
+            } else {
+                document.getElementById('donation-button').innerHTML = 'Apple Pay is not available in your browser.';
+            }
+        });
+
+        paymentRequest.on('paymentmethod', function(ev) {
+            // In a real application, you would send this to your server
+            console.log('Payment received!', ev.paymentMethod);
+            alert('Thank you for your donation!');
+            ev.complete('success');
+        });
+    </script>
+</body>
+</html>
