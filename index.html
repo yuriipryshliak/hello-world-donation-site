@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hello World Donation Site</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -37,6 +38,17 @@
         .donate-button:hover {
             background-color: #45a049;
         }
+        .content-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .tree-svg {
+            width: 100px;
+            height: 100px;
+        }
         @media (max-width: 600px) {
             h1 {
                 font-size: 2em;
@@ -48,12 +60,24 @@
                 padding: 12px 24px;
                 font-size: 1em;
             }
+            .tree-svg {
+                width: 80px;
+                height: 80px;
+            }
         }
     </style>
 </head>
 <body>
     <h1>Hello World!</h1>
     <p>Welcome to my donation site. Your support is appreciated!</p>
-    <a href="https://send.monobank.ua/jar/AX7aR6vBtf" class="donate-button" target="_blank">Donate via Monobank</a>
+    <div class="content-wrapper">
+        <a href="https://send.monobank.ua/jar/AX7aR6vBtf" class="donate-button" target="_blank">Donate via Monobank</a>
+        <svg class="tree-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <rect x="45" y="80" width="10" height="20" fill="#8B4513"/> <!-- Trunk -->
+            <path d="M50 10 Q25 40 30 70 Q40 75 50 60 Q60 75 70 70 Q75 40 50 10Z" fill="#228B22"/> <!-- Foliage -->
+            <circle cx="40" cy="50" r="5" fill="#8B4513"/> <!-- Branch -->
+            <circle cx="60" cy="40" r="5" fill="#8B4513"/> <!-- Branch -->
+        </svg>
+    </div>
 </body>
 </html>
