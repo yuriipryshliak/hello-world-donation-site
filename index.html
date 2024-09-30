@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hello World Donation Site</title>
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -38,17 +37,6 @@
         .donate-button:hover {
             background-color: #45a049;
         }
-        .content-wrapper {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 20px;
-        }
-        .tree-svg {
-            width: 100px;
-            height: 100px;
-        }
         @media (max-width: 600px) {
             h1 {
                 font-size: 2em;
@@ -60,24 +48,70 @@
                 padding: 12px 24px;
                 font-size: 1em;
             }
-            .tree-svg {
-                width: 80px;
-                height: 80px;
-            }
+        }
+        .oak-tree-container {
+            width: 100%;
+            height: 500px; /* Adjust the height to make sure the oak tree is visible */
         }
     </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
 </head>
 <body>
     <h1>Hello World!</h1>
     <p>Welcome to my donation site. Your support is appreciated!</p>
-    <div class="content-wrapper">
-        <a href="https://send.monobank.ua/jar/AX7aR6vBtf" class="donate-button" target="_blank">Donate via Monobank</a>
-        <svg class="tree-svg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-            <rect x="45" y="80" width="10" height="20" fill="#8B4513"/> <!-- Trunk -->
-            <path d="M50 10 Q25 40 30 70 Q40 75 50 60 Q60 75 70 70 Q75 40 50 10Z" fill="#228B22"/> <!-- Foliage -->
-            <circle cx="40" cy="50" r="5" fill="#8B4513"/> <!-- Branch -->
-            <circle cx="60" cy="40" r="5" fill="#8B4513"/> <!-- Branch -->
-        </svg>
-    </div>
+    <a href="https://send.monobank.ua/jar/AX7aR6vBtf" class="donate-button" target="_blank">Donate via Monobank</a>
+
+    <!-- Oak Tree Visualization -->
+    <div class="oak-tree-container" id="oak-tree"></div>
+
+    <script>
+        function setup() {
+            let canvas = createCanvas(windowWidth, 500);  // Adjusted canvas size
+            canvas.parent('oak-tree');  // Attach canvas to the oak tree div
+            noLoop();
+        }
+
+        function draw() {
+            background(220);
+            translate(width / 2, height);
+            branch(200);
+        }
+
+        function branch(len) {
+            stroke(70, 40, 20);
+            strokeWeight(len * 0.1);
+            line(0, 0, 0, -len);
+            translate(0, -len);
+            len *= 0.67;
+            if (len > 4) {
+                push();
+                rotate(PI / 6 + random(-0.1, 0.1));
+                branch(len);
+                pop();
+                push();
+                rotate(-PI / 4 + random(-0.1, 0.1));
+                branch(len);
+                pop();
+                if (random() < 0.3) {
+                    push();
+                    rotate(random(-0.1, 0.1));
+                    branch(len * 0.8);
+                    pop();
+                }
+            } else {
+                let r = 80 + random(20);
+                let g = 120 + random(40);
+                let b = 30 + random(20);
+                fill(r, g, b, 150);
+                noStroke();
+                ellipse(0, 0, 10, 10);
+            }
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth, 500);
+            redraw();
+        }
+    </script>
 </body>
 </html>
