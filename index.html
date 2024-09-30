@@ -52,67 +52,58 @@
         .oak-tree-container {
             width: 100%;
             height: 500px;
+            margin: 0 auto;
+            max-width: calc(100vw - 40px);
         }
     </style>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
 </head>
 <body>
     <h1>Hello World!</h1>
     <p>Welcome to my donation site. Your support is appreciated!</p>
     <a href="https://send.monobank.ua/jar/AX7aR6vBtf" class="donate-button" target="_blank">Donate via Monobank</a>
-
     <!-- Oak Tree Visualization -->
     <div class="oak-tree-container" id="oak-tree"></div>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
     <script>
         function setup() {
-            let canvas = createCanvas(windowWidth - 40, 500);  // Left +20, Right -20
+            let canvas = createCanvas(min(windowWidth - 40, 760), 500);
             canvas.parent('oak-tree');
-            noLoop();  // Prevent continuous drawing (to fix mutation)
+            noLoop();
         }
 
         function draw() {
-            background(220);
-            translate(width / 2, height);  // Move to the bottom center
-            scale(0.6);  // Zoom out by 60%
-            randomSeed(42);  // Set a fixed seed to avoid mutation
-            branch(200);
+            clear();
+            translate(width / 2, height * 0.9);  // Move to slightly above the bottom center
+            scale(0.5);  // Adjust scale as needed
+            drawTree(0, 0, 200, -HALF_PI, 9);
         }
 
-        function branch(len) {
+        function drawTree(x1, y1, len, angle, depth) {
+            if (depth === 0) return;
+
+            let x2 = x1 + len * cos(angle);
+            let y2 = y1 + len * sin(angle);
+
             stroke(70, 40, 20);
-            strokeWeight(len * 0.1);
-            line(0, 0, 0, -len);
-            translate(0, -len);
-            len *= 0.67;
-            if (len > 4) {
-                push();
-                rotate(PI / 6 + random(-0.1, 0.1));
-                branch(len);
-                pop();
-                push();
-                rotate(-PI / 4 + random(-0.1, 0.1));
-                branch(len);
-                pop();
-                if (random() < 0.3) {
-                    push();
-                    rotate(random(-0.1, 0.1));
-                    branch(len * 0.8);
-                    pop();
-                }
+            strokeWeight(depth);
+            line(x1, y1, x2, y2);
+
+            if (depth > 3) {
+                drawTree(x2, y2, len * 0.7, angle - random(0.1, 0.5), depth - 1);
+                drawTree(x2, y2, len * 0.7, angle + random(0.1, 0.5), depth - 1);
             } else {
                 let r = 80 + random(20);
                 let g = 120 + random(40);
                 let b = 30 + random(20);
                 fill(r, g, b, 150);
                 noStroke();
-                ellipse(0, 0, 10, 10);
+                ellipse(x2, y2, 15, 15);
             }
         }
 
         function windowResized() {
-            resizeCanvas(windowWidth - 40, 500);  // Maintain margins on resize
-            redraw();  // Redraw the tree
+            resizeCanvas(min(windowWidth - 40, 760), 500);
+            redraw();
         }
     </script>
 </body>
