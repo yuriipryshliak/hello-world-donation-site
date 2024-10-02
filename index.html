@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello World Donation Site with Mathematical Oak Tree and Scrolling</title>
+    <title>Hello World Donation Site with Mathematical Oak Tree</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -29,7 +29,7 @@
             transition: all 0.3s ease;
         }
         .blur-background.collapsed {
-            padding: 5px 10px;
+            padding: 5px 20px;
             border-radius: 0;
         }
         h1 {
@@ -38,13 +38,13 @@
             transition: font-size 0.3s ease;
         }
         .collapsed h1 {
-            font-size: 1em;
+            font-size: 1.2em;
             margin: 0;
         }
-        p, .donate-button, .download-button, .hint {
+        p, .donate-button, .download-button {
             transition: opacity 0.3s ease, transform 0.3s ease;
         }
-        .collapsed p, .collapsed .donate-button, .collapsed .download-button, .collapsed .hint {
+        .collapsed p, .collapsed .donate-button, .collapsed .download-button {
             opacity: 0;
             transform: translateY(-20px);
         }
@@ -76,17 +76,12 @@
             width: 100%;
             height: 100%;
         }
-        .hint {
-            font-size: 0.9em;
-            margin-top: 20px;
-            font-style: italic;
-        }
         @media (max-width: 600px) {
             h1 {
                 font-size: 2em;
             }
             .collapsed h1 {
-                font-size: 1em;
+                font-size: 1.2em;
             }
             p {
                 font-size: 1em;
@@ -105,7 +100,6 @@
             <p>Welcome to my donation site. Your support is appreciated!</p>
             <a href="https://send.monobank.ua/jar/AX7aR6vBtf" class="donate-button" target="_blank">Donate via Monobank</a>
             <button class="download-button" onclick="downloadSVG()">Download Tree as SVG</button>
-            <p class="hint" id="hint"></p>
         </div>
     </div>
     
@@ -117,7 +111,6 @@
         const svgNS = "http://www.w3.org/2000/svg";
         const svg = document.getElementById('tree');
         let seed = Math.random();
-        let generation = 0;
 
         const content = document.querySelector('.content');
         const blurBackground = document.querySelector('.blur-background');
@@ -197,63 +190,19 @@
             return x - Math.floor(x);
         }
 
-        function regenerateTree(direction) {
-            generation += direction;
-            seed = Math.abs(generation); // Use generation as seed
-            createTree();
-        }
-
         function downloadSVG() {
             const svgData = new XMLSerializer().serializeToString(svg);
             const svgBlob = new Blob([svgData], {type: "image/svg+xml;charset=utf-8"});
             const svgUrl = URL.createObjectURL(svgBlob);
             const downloadLink = document.createElement("a");
             downloadLink.href = svgUrl;
-            downloadLink.download = `mathematical-oak-tree-${generation}.svg`;
+            downloadLink.download = `mathematical-oak-tree.svg`;
             document.body.appendChild(downloadLink);
             downloadLink.click();
             document.body.removeChild(downloadLink);
         }
 
         window.addEventListener('load', createTree);
-
-        const hintElement = document.getElementById('hint');
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        hintElement.textContent = isMobile 
-            ? 'Swipe right or left to change the tree' 
-            : 'Press left or right arrow key to change the tree';
-
-        setTimeout(() => {
-            hintElement.style.opacity = '1';
-        }, 2000);
-
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'ArrowLeft') {
-                regenerateTree(-1);
-            } else if (event.key === 'ArrowRight') {
-                regenerateTree(1);
-            }
-        });
-
-        let touchStartX = 0;
-        let touchEndX = 0;
-
-        document.addEventListener('touchstart', (event) => {
-            touchStartX = event.changedTouches[0].screenX;
-        });
-
-        document.addEventListener('touchend', (event) => {
-            touchEndX = event.changedTouches[0].screenX;
-            handleGesture();
-        });
-
-        function handleGesture() {
-            if (touchEndX < touchStartX) {
-                regenerateTree(1);
-            } else if (touchEndX > touchStartX) {
-                regenerateTree(-1);
-            }
-        }
 
         window.addEventListener('scroll', () => {
             const scrollPos = window.scrollY;
