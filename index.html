@@ -20,7 +20,6 @@
             left: 0;
             width: 100%;
             z-index: 2;
-            transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
         .blur-background {
             background-color: rgba(255, 255, 255, 0.7);
@@ -30,7 +29,7 @@
             transition: all 0.3s ease;
         }
         .blur-background.collapsed {
-            padding: 10px;
+            padding: 5px 10px;
             border-radius: 0;
         }
         h1 {
@@ -39,8 +38,8 @@
             transition: font-size 0.3s ease;
         }
         .collapsed h1 {
-            font-size: 1.5em;
-            margin-bottom: 10px;
+            font-size: 1em;
+            margin: 0;
         }
         p, .donate-button, .download-button, .hint {
             transition: opacity 0.3s ease, transform 0.3s ease;
@@ -72,7 +71,6 @@
             bottom: 0;
             left: 0;
             z-index: 1;
-            transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
         svg {
             width: 100%;
@@ -88,7 +86,7 @@
                 font-size: 2em;
             }
             .collapsed h1 {
-                font-size: 1.2em;
+                font-size: 1em;
             }
             p {
                 font-size: 1em;
@@ -120,16 +118,12 @@
         const svg = document.getElementById('tree');
         let seed = Math.random();
         let generation = 0;
-        
-        // Scrolling variables
-        let lastScrollTop = 0;
-        let ticking = false;
+
         const content = document.querySelector('.content');
         const blurBackground = document.querySelector('.blur-background');
         const treeContainer = document.getElementById('tree-container');
 
         function createTree() {
-            // Clear previous tree
             while (svg.firstChild) {
                 svg.removeChild(svg.firstChild);
             }
@@ -137,7 +131,6 @@
             const viewBox = `0 0 ${window.innerWidth} ${window.innerHeight}`;
             svg.setAttribute('viewBox', viewBox);
 
-            // Add white background
             const background = document.createElementNS(svgNS, 'rect');
             background.setAttribute('width', '100%');
             background.setAttribute('height', '100%');
@@ -161,29 +154,24 @@
             line.setAttribute('stroke-width', len * 0.1);
             parent.appendChild(line);
 
-            // Move to the end of the branch
             const newX = x;
             const newY = y - len;
 
-            // Reduce the length for the next branches
             len *= 0.67;  // Golden ratio approximation
 
             if (len > 4) {
-                // Right branch
                 const rightAngle = Math.PI / 6 + (pseudoRandom() * 0.2 - 0.1);
                 const rightG = document.createElementNS(svgNS, 'g');
                 rightG.setAttribute('transform', `translate(${newX}, ${newY}) rotate(${rightAngle * 180 / Math.PI})`);
                 parent.appendChild(rightG);
                 branch(rightG, len, 0, 0);
 
-                // Left branch
                 const leftAngle = -Math.PI / 4 + (pseudoRandom() * 0.2 - 0.1);
                 const leftG = document.createElementNS(svgNS, 'g');
                 leftG.setAttribute('transform', `translate(${newX}, ${newY}) rotate(${leftAngle * 180 / Math.PI})`);
                 parent.appendChild(leftG);
                 branch(leftG, len, 0, 0);
 
-                // Sometimes add a middle branch
                 if (pseudoRandom() < 0.3) {
                     const middleAngle = pseudoRandom() * 0.2 - 0.1;
                     const middleG = document.createElementNS(svgNS, 'g');
@@ -192,7 +180,6 @@
                     branch(middleG, len * 0.8, 0, 0);
                 }
             } else {
-                // Draw leaves at the end of branches
                 const r = 80 + pseudoRandom() * 20;
                 const g = 120 + pseudoRandom() * 40;
                 const b = 30 + pseudoRandom() * 20;
@@ -228,22 +215,18 @@
             document.body.removeChild(downloadLink);
         }
 
-        // Initialize tree
         window.addEventListener('load', createTree);
 
-        // Set appropriate hint based on device
         const hintElement = document.getElementById('hint');
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         hintElement.textContent = isMobile 
             ? 'Swipe right or left to change the tree' 
             : 'Press left or right arrow key to change the tree';
 
-        // Show hint after 2 seconds
         setTimeout(() => {
             hintElement.style.opacity = '1';
         }, 2000);
 
-        // Handle key presses for desktop
         document.addEventListener('keydown', (event) => {
             if (event.key === 'ArrowLeft') {
                 regenerateTree(-1);
@@ -252,7 +235,6 @@
             }
         });
 
-        // Handle swipes for mobile
         let touchStartX = 0;
         let touchEndX = 0;
 
@@ -262,54 +244,24 @@
 
         document.addEventListener('touchend', (event) => {
             touchEndX = event.changedTouches[0].screenX;
-            handleSwipe();
+            handleGesture();
         });
 
-        function handleSwipe() {
+        function handleGesture() {
             if (touchEndX < touchStartX) {
-                regenerateTree(-1); // Swipe left
-            }
-            if (touchEndX > touchStartX) {
-                regenerateTree(1); // Swipe right
+                regenerateTree(1);
+            } else if (touchEndX > touchStartX) {
+                regenerateTree(-1);
             }
         }
 
-        // Scrolling event listener
-        window.addEventListener('scroll', function(e) {
-            lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
-            if (!ticking) {
-                window.requestAnimationFrame(function() {
-                    handleScroll(lastScrollTop);
-                    ticking = false;
-                });
-                ticking = true;
-            }
-        });
-
-        function handleScroll(scrollTop) {
-            const maxScroll = document.body.clientHeight - window.innerHeight;
-            const scrollPercentage = Math.min(scrollTop / maxScroll, 1);
-            
-            // Move the content up
-            content.style.transform = `translateY(-${scrollPercentage * 50}px)`;
-            
-            // Collapse the header
-            if (scrollPercentage > 0.1) {
+        window.addEventListener('scroll', () => {
+            const scrollPos = window.scrollY;
+            if (scrollPos > 50) {
                 blurBackground.classList.add('collapsed');
             } else {
                 blurBackground.classList.remove('collapsed');
             }
-            
-            // Move the tree up (with a delay)
-            const treeScrollPercentage = Math.max(0, (scrollPercentage - 0.3) / 0.7);
-            treeContainer.style.transform = `translateY(-${treeScrollPercentage * 30}vh)`;
-        }
-
-        // Resize the SVG on window resize
-        window.addEventListener('resize', () => {
-            const viewBox = `0 0 ${window.innerWidth} ${window.innerHeight}`;
-            svg.setAttribute('viewBox', viewBox);
-            createTree(); // Recreate the tree on resize
         });
     </script>
 </body>
