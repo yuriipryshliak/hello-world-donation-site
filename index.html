@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello World Donation Site with Mathematical Oak Tree</title>
+    <title>Hello World Donation Site with Mathematical Oak Tree and Scrolling</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,35 +12,42 @@
             padding: 0;
             text-align: center;
             overflow-x: hidden;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
+            height: 300vh; /* Make the page scrollable */
         }
         .content {
-            flex-grow: 1;
-            z-index: 1;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 2;
+            transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
         .blur-background {
             background-color: rgba(255, 255, 255, 0.7);
             backdrop-filter: blur(10px);
             padding: 20px;
             border-radius: 10px;
-            transition: background-color 0.3s ease;
+            transition: all 0.3s ease;
         }
-        .blur-background:hover {
-            background-color: rgba(255, 255, 255, 0.8);
+        .blur-background.collapsed {
+            padding: 10px;
+            border-radius: 0;
         }
         h1 {
             font-size: 2.5em;
             margin-bottom: 20px;
+            transition: font-size 0.3s ease;
         }
-        p {
-            font-size: 1.2em;
-            margin-bottom: 30px;
+        .collapsed h1 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        p, .donate-button, .download-button, .hint {
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .collapsed p, .collapsed .donate-button, .collapsed .download-button, .collapsed .hint {
+            opacity: 0;
+            transform: translateY(-20px);
         }
         .donate-button, .download-button {
             display: inline-block;
@@ -64,7 +71,8 @@
             position: fixed;
             bottom: 0;
             left: 0;
-            z-index: -1;
+            z-index: 1;
+            transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
         svg {
             width: 100%;
@@ -74,12 +82,13 @@
             font-size: 0.9em;
             margin-top: 20px;
             font-style: italic;
-            opacity: 0;
-            transition: opacity 0.5s ease;
         }
         @media (max-width: 600px) {
             h1 {
                 font-size: 2em;
+            }
+            .collapsed h1 {
+                font-size: 1.2em;
             }
             p {
                 font-size: 1em;
@@ -111,6 +120,13 @@
         const svg = document.getElementById('tree');
         let seed = Math.random();
         let generation = 0;
+        
+        // Scrolling variables
+        let lastScrollTop = 0;
+        let ticking = false;
+        const content = document.querySelector('.content');
+        const blurBackground = document.querySelector('.blur-background');
+        const treeContainer = document.getElementById('tree-container');
 
         function createTree() {
             // Clear previous tree
@@ -212,7 +228,8 @@
             document.body.removeChild(downloadLink);
         }
 
-        createTree();
+        // Initialize tree
+        window.addEventListener('load', createTree);
 
         // Set appropriate hint based on device
         const hintElement = document.getElementById('hint');
@@ -257,12 +274,42 @@
             }
         }
 
-        // Only resize the SVG on window resize, don't regenerate the tree
+        // Scrolling event listener
+        window.addEventListener('scroll', function(e) {
+            lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            if (!ticking) {
+                window.requestAnimationFrame(function() {
+                    handleScroll(lastScrollTop);
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        });
+
+        function handleScroll(scrollTop) {
+            const maxScroll = document.body.clientHeight - window.innerHeight;
+            const scrollPercentage = Math.min(scrollTop / maxScroll, 1);
+            
+            // Move the content up
+            content.style.transform = `translateY(-${scrollPercentage * 50}px)`;
+            
+            // Collapse the header
+            if (scrollPercentage > 0.1) {
+                blurBackground.classList.add('collapsed');
+            } else {
+                blurBackground.classList.remove('collapsed');
+            }
+            
+            // Move the tree up (with a delay)
+            const treeScrollPercentage = Math.max(0, (scrollPercentage - 0.3) / 0.7);
+            treeContainer.style.transform = `translateY(-${treeScrollPercentage * 30}vh)`;
+        }
+
+        // Resize the SVG on window resize
         window.addEventListener('resize', () => {
             const viewBox = `0 0 ${window.innerWidth} ${window.innerHeight}`;
             svg.setAttribute('viewBox', viewBox);
-            const g = svg.lastChild;
-            g.setAttribute('transform', `translate(${window.innerWidth / 2}, ${window.innerHeight})`);
+            createTree(); // Recreate the tree on resize
         });
     </script>
 </body>
