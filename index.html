@@ -242,18 +242,36 @@
             }
         }
 
-        // Handle swipe gestures to mutate trees
+        // Handle swipe gestures: up/down for phase change, left/right for tree mutation
         let startX = 0;
+        let startY = 0;
+
         document.addEventListener('touchstart', (event) => {
             startX = event.touches[0].clientX;
+            startY = event.touches[0].clientY;
         });
 
         document.addEventListener('touchend', (event) => {
             const endX = event.changedTouches[0].clientX;
-            if (startX > endX) {  // Swipe left to decrease generation
-                regenerateTrees(-1);
-            } else if (startX < endX) {  // Swipe right to increase generation
-                regenerateTrees(1);
+            const endY = event.changedTouches[0].clientY;
+
+            const diffX = Math.abs(startX - endX);
+            const diffY = Math.abs(startY - endY);
+
+            if (diffX > diffY) {
+                // Horizontal swipe
+                if (startX > endX) {
+                    regenerateTrees(-1);  // Swipe left
+                } else if (startX < endX) {
+                    regenerateTrees(1);   // Swipe right
+                }
+            } else {
+                // Vertical swipe
+                if (startY > endY) {
+                    setPhase(phase === 'middle' ? 'lower' : 'middle');  // Swipe up
+                } else if (startY < endY) {
+                    setPhase(phase === 'middle' ? 'upper' : 'middle');  // Swipe down
+                }
             }
         });
 
