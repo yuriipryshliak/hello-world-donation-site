@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Three-Phase Donation Site with Interactive Trees</title>
+    <title>Interactive Donation Site with Fortune Telling Coffee Mug</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -28,6 +28,8 @@
             padding: 20px;
             border-radius: 10px;
             transition: background-color 0.3s ease;
+            max-width: 400px;
+            margin: 0 auto;
         }
         .blur-background:hover {
             background-color: rgba(255, 255, 255, 0.8);
@@ -76,16 +78,48 @@
             opacity: 0;
             transition: opacity 0.5s ease;
         }
+        .fortune-teller {
+            position: fixed;
+            bottom: -70%;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: all 0.5s ease;
+            z-index: 2;
+        }
+        #coffeeMug {
+            width: 300px;
+            height: 200px;
+        }
+        #fortune {
+            margin-top: 20px;
+            font-style: italic;
+        }
+        .steam {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            filter: blur(10px);
+            animation: steam 2s infinite;
+        }
+        @keyframes steam {
+            0% { transform: translateX(-50%) translateY(0) scale(1); opacity: 0.8; }
+            100% { transform: translateX(-50%) translateY(-20px) scale(1.5); opacity: 0; }
+        }
         @media (max-width: 600px) {
-            .content {
-                width: 90%;  /* Adjusted for mobile */
+            .content, .fortune-teller {
+                width: 90%;
                 padding: 15px;
             }
             .blur-background {
-                width: 100%;  /* Full width for mobile */
+                width: 100%;
                 max-width: 100%;
                 padding: 15px;
-                box-sizing: border-box; /* Ensures no content overflow on right */
+                box-sizing: border-box;
             }
             h1 {
                 font-size: 2em;
@@ -96,6 +130,10 @@
             .donate-button, .download-button {
                 padding: 12px 24px;
                 font-size: 1em;
+            }
+            #coffeeMug {
+                width: 250px;
+                height: 160px;
             }
         }
     </style>
@@ -111,6 +149,19 @@
         </div>
     </div>
     
+    <div class="fortune-teller">
+        <div class="blur-background">
+            <div class="steam"></div>
+            <svg id="coffeeMug" viewBox="0 0 300 200">
+                <path d="M50,50 L250,50 L230,180 L70,180 Z" fill="#D2691E" />
+                <path id="coffeeLevel" d="M55,55 L245,55 L227,175 L73,175 Z" fill="#4B2D0F" />
+                <g id="remnants"></g>
+            </svg>
+            <button onclick="drinkCoffee()">Drink Coffee</button>
+            <p id="fortune"></p>
+        </div>
+    </div>
+    
     <div id="tree-container">
         <svg id="tree" xmlns="http://www.w3.org/2000/svg"></svg>
     </div>
@@ -122,7 +173,7 @@
         let generation = 0;
         let phase = 'middle';
         let trees = [];
-        const maxTrees = window.innerWidth <= 600 ? 5 : 9; // 5 for mobile, 9 for desktop
+        let isCoffeeDrunk = false;
 
         function createTree(x, y, scale = 1) {
             const g = document.createElementNS(svgNS, 'g');
@@ -211,6 +262,7 @@
 
         function setPhase(newPhase) {
             const content = document.querySelector('.content');
+            const fortuneTeller = document.querySelector('.fortune-teller');
             const treeContainer = document.getElementById('tree-container');
 
             phase = newPhase;
@@ -218,16 +270,19 @@
             switch(phase) {
                 case 'upper':
                     content.style.transform = 'translate(-50%, 50%)';
+                    fortuneTeller.style.bottom = '-70%';
                     treeContainer.style.transform = 'translateY(10%) scale(1.1)';
                     svg.style.pointerEvents = 'auto';
                     break;
                 case 'middle':
                     content.style.transform = 'translate(-50%, -50%)';
+                    fortuneTeller.style.bottom = '-70%';
                     treeContainer.style.transform = 'translateY(0) scale(1)';
                     svg.style.pointerEvents = 'none';
                     break;
                 case 'lower':
                     content.style.transform = 'translate(-50%, -150%)';
+                    fortuneTeller.style.bottom = '10%';
                     treeContainer.style.transform = 'translateY(-5%) scale(0.9)';
                     svg.style.pointerEvents = 'none';
                     break;
@@ -240,6 +295,97 @@
             } else if (event.deltaY < 0 && phase !== 'upper') {
                 setPhase(phase === 'middle' ? 'upper' : 'middle');
             }
+        }
+
+        function drinkCoffee() {
+            if (!isCoffeeDrunk) {
+                const coffeeLevel = document.getElementById('coffeeLevel');
+                const steam = document.querySelector('.steam');
+                
+                coffeeLevel.style.transition = 'all 1.5s ease';
+                coffeeLevel.setAttribute('d', 'M73,160 L227,160 L227,175 L73,175 Z');
+                
+                steam.style.display = 'none';
+                
+                generateRemnants();
+                displayFortune();
+                isCoffeeDrunk = true;
+            }
+        }
+
+        function generateRemnants() {
+            const remnants = document.getElementById('remnants');
+            const numPatterns = 5 + Math.floor(Math.random() * 10);
+
+            for (let i = 0; i < numPatterns; i++) {
+                const pattern = generatePattern();
+                remnants.appendChild(pattern);
+            }
+        }
+
+        function generatePattern() {
+            const patternTypes = ['spiral', 'cluster', 'line'];
+            const type = patternTypes[Math.floor(Math.random() * patternTypes.length)];
+            const x = 73 + Math.random() * 154;
+            const y = 160 + Math.random() * 15;
+
+            const pattern = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+            switch (type) {
+                case 'spiral':
+                    for (let i = 0; i < 20; i++) {
+                        const angle = i * 0.5;
+                        const radius = i * 0.5;
+                        const cx = x + Math.cos(angle) * radius;
+                        const cy = y + Math.sin(angle) * radius;
+                        const dot = createDot(cx, cy);
+                        pattern.appendChild(dot);
+                    }
+                    break;
+                case 'cluster':
+                    for (let i = 0; i < 15; i++) {
+                        const cx = x + (Math.random() - 0.5) * 10;
+                        const cy = y + (Math.random() - 0.5) * 5;
+                        const dot = createDot(cx, cy);
+                        pattern.appendChild(dot);
+                    }
+                    break;
+                case 'line':
+                    for (let i = 0; i < 10; i++) {
+                        const cx = x + i * 2;
+                        const cy = y + (Math.random() - 0.5) * 3;
+                        const dot = createDot(cx, cy);
+                        pattern.appendChild(dot);
+                    }
+                    break;
+            }
+
+            return pattern;
+        }
+
+        function createDot(cx, cy) {
+            const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            dot.setAttribute('cx', cx);
+            dot.setAttribute('cy', cy);
+            dot.setAttribute('r', 0.5 + Math.random());
+            dot.setAttribute('fill', '#2C1603');
+            return dot;
+        }
+
+        function displayFortune() {
+            const fortunes = [
+                "A journey of a thousand miles begins with a single sip.",
+                "Your creativity will bloom like a well-roasted coffee bean.",
+                "A surprising opportunity will percolate into your life soon.",
+                "Your hard work will soon bear fruit... or beans, in this case.",
+                "A new blend of friendships will enrich your days ahead.",
+                "Your future is as rich and complex as a perfect espresso.",
+                "An unexpected encounter will add flavor to your routine.",
+                "Your hidden talents will soon be brewed to perfection.",
+                "A long-forgotten dream will be freshly ground and brewed.",
+                "Your patience in waiting for your coffee to cool will be rewarded in life."
+            ];
+            document.getElementById('fortune').innerText = "Your fortune: " + fortunes[Math.floor(Math.random() * fortunes.length)];
         }
 
         // Handle swipe gestures: up/down for phase change, left/right for tree mutation
