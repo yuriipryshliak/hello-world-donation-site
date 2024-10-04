@@ -318,10 +318,18 @@
         }
 
         function handleWheel(event) {
-            if (event.deltaY > 0 && phase !== 'lower') {
-                setPhase(phase === 'middle' ? 'lower' : 'middle');
-            } else if (event.deltaY < 0 && phase !== 'upper') {
-                setPhase(phase === 'middle' ? 'upper' : 'middle');
+            if (event.deltaY > 0) { // Scrolling down
+                if (phase === 'middle') {
+                    setPhase('lower');
+                } else if (phase === 'upper') {
+                    setPhase('middle');
+                }
+            } else if (event.deltaY < 0) { // Scrolling up
+                if (phase === 'middle') {
+                    setPhase('upper');
+                } else if (phase === 'lower') {
+                    setPhase('middle');
+                }
             }
         }
 
@@ -460,10 +468,18 @@
                 }
             } else {
                 // Vertical swipe
-                if (startY > endY) {
-                    setPhase(phase === 'middle' ? 'lower' : 'middle');  // Swipe up
-                } else if (startY < endY) {
-                    setPhase(phase === 'middle' ? 'upper' : 'middle');  // Swipe down
+                if (startY > endY) { // Swiping up
+                    if (phase === 'middle') {
+                        setPhase('lower');
+                    } else if (phase === 'upper') {
+                        setPhase('middle');
+                    }
+                } else if (startY < endY) { // Swiping down
+                    if (phase === 'middle') {
+                        setPhase('upper');
+                    } else if (phase === 'lower') {
+                        setPhase('middle');
+                    }
                 }
             }
         });
