@@ -93,6 +93,26 @@
         #fortune {
             margin-top: 20px;
             font-style: italic;
+            min-height: 60px; /* Fixed height for fortune text */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .drink-coffee-btn {
+            background-color: #8B4513;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background-color 0.3s ease;
+        }
+        .drink-coffee-btn:hover {
+            background-color: #A0522D;
         }
         .steam {
             position: absolute;
@@ -154,10 +174,18 @@
             <div class="steam"></div>
             <svg id="coffeeMug" viewBox="0 0 300 200">
                 <path d="M50,50 L250,50 L230,180 L70,180 Z" fill="#D2691E" />
-                <path id="coffeeLevel" d="M55,55 L245,55 L227,175 L73,175 Z" fill="#4B2D0F" />
+                <path id="coffeeLevel" d="M55,55 L245,55 L227,175 L73,175 Z" fill="#4B2D0F">
+                    <animate id="drinkAnimation" 
+                        attributeName="d" 
+                        dur="1.5s" 
+                        fill="freeze" 
+                        begin="indefinite"
+                        from="M55,55 L245,55 L227,175 L73,175 Z"
+                        to="M73,160 L227,160 L227,175 L73,175 Z" />
+                </path>
                 <g id="remnants"></g>
             </svg>
-            <button onclick="drinkCoffee()">Drink Coffee</button>
+            <button class="drink-coffee-btn" onclick="drinkCoffee()">Drink Coffee</button>
             <p id="fortune"></p>
         </div>
     </div>
@@ -301,10 +329,9 @@
             if (!isCoffeeDrunk) {
                 const coffeeLevel = document.getElementById('coffeeLevel');
                 const steam = document.querySelector('.steam');
+                const drinkAnimation = document.getElementById('drinkAnimation');
                 
-                coffeeLevel.style.transition = 'all 1.5s ease';
-                coffeeLevel.setAttribute('d', 'M73,160 L227,160 L227,175 L73,175 Z');
-                
+                drinkAnimation.beginElement();
                 steam.style.display = 'none';
                 
                 generateRemnants();
@@ -383,7 +410,27 @@
                 "An unexpected encounter will add flavor to your routine.",
                 "Your hidden talents will soon be brewed to perfection.",
                 "A long-forgotten dream will be freshly ground and brewed.",
-                "Your patience in waiting for your coffee to cool will be rewarded in life."
+                "Your patience in waiting for your coffee to cool will be rewarded in life.",
+                "The stars align in your cup, bringing fortuitous encounters.",
+                "A warm conversation will lead to lasting connections.",
+                "Your generous spirit will return to you threefold.",
+                "An old friend will bring new opportunities.",
+                "The path you've chosen will lead to unexpected delights.",
+                "A small act of kindness will create ripples of joy.",
+                "Your authentic self will attract authentic relationships.",
+                "A creative project will bring unexpected success.",
+                "The wisdom you seek is already within you, like coffee grounds ready to brew.",
+                "A chance meeting will evolve into a meaningful collaboration.",
+                "Your dedication to growth will yield remarkable results.",
+                "An adventure awaits just around the corner of your cup.",
+                "The seeds of success you've planted will soon sprout.",
+                "A moment of clarity will guide your next big decision.",
+                "Your positive energy will attract positive outcomes.",
+                "A mysterious stranger will bring exciting news.",
+                "The obstacles ahead will become stepping stones to success.",
+                "Your intuition will guide you to make the right choice.",
+                "A passionate pursuit will lead to fulfilling achievements.",
+                "The universe conspires to help those who help others."
             ];
             document.getElementById('fortune').innerText = "Your fortune: " + fortunes[Math.floor(Math.random() * fortunes.length)];
         }
