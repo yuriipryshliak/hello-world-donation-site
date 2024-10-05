@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Realistic Popcorn Microwave Animation with Volume-Based Collisions</title>
+    <style>
+        body { display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f0f0f0; }
+        #microwave { width: 400px; height: 300px; background-color: #ddd; border-radius: 10px; position: relative; overflow: hidden; }
+        #button { position: absolute; right: 10px; top: 10px; padding: 5px 10px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        #popcorn-container { width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+    <div id="microwave">
+        <svg id="popcorn-container" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
+            <rect x="0" y="0" width="400" height="300" fill="none" stroke="#999" stroke-width="1"/>
+            <rect x="0" y="280" width="400" height="20" fill="#999" />
+        </svg>
+        <button id="button">Microwave</button>
+    </div>
+
+    <script>
+        const svg = document.getElementById('popcorn-container');
+        const button = document.getElementById('button');
+        const kernels = [];
+        const poppedKernels = [];
+        let animationId;
+        let heatingTime = 0;
+
+        // Physics constants
+        const GRAVITY = 9.8 * 0.1;
+        const DAMPING = 0.98;
+        const VELOCITY_THRESHOLD = 0.05;
+        const FRICTION = 0.92;
+        const SURFACE_FRICTION = 0.75;
+        const KERNEL_FRICTION = 0.85;
+        const ROTATION_DAMPING = 0.9;
+        
+        // Explosion constants
+        const EXPLOSION_HORIZONTAL_FORCE = 8;
+        const EXPLOSION_VERTICAL_FORCE = 15;
+        
+        // Boundary constants
+        const BOUNDS = {
+            left: 5,
+            right: 395,
+            top: 5,
+            bottom: 275
+        };
+
+        function createKernel(x, y) {
+            const kernel = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+            kernel.setAttribute("cx", x);
+            kernel.setAttribute("cy", y);
+            kernel.setAttribute("rx", 3);
+            kernel.setAttribute("ry", 2);
+            kernel.setAttribute("fill", "#DAA520");
+            svg.appendChild(kernel);
+            
+            return {
+                element: kernel,
+                x: Math.max(BOUNDS.left + 5, Math.min(BOUNDS.right - 5, x)),
+                y: Math.max(BOUNDS.top + 5, Math.min(BOUNDS.bottom - 5, y)),
+                vx: (Math.random() - 0.5) * 2,
+                vy: Math.random() * 2,
+                popped: false,
+                radius: 2
+            };
+        }
+
+        function createPoppedShape() {
+            const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            const mainBody = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            mainBody.setAttribute("d", "M-8,-8 C-4,-12 4,-12 8,-8 C12,-4 12,4 8,8 C4,12 -4,12 -8,8 C-12,4 -12,-4 -8,-8 Z");
+            mainBody.setAttribute("fill", "#FFFAF0");
+            group.appendChild(mainBody);
+
+            const colors = ["#FFFAF0", "#FFF8DC", "#F4A460", "#DEB887"];
+
+            for (let i = 0; i < 5; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 4 + 8;
+                const x = Math.cos(angle) * distance;
+                const y = Math.sin(angle) * distance;
+                const size = Math.random() * 3 + 2;
+                const blob = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                blob.setAttribute("cx", x);
+                blob.setAttribute("cy", y);
+                blob.setAttribute("r", size);
+                blob.setAttribute("fill", colors[Math.floor(Math.random() * colors.length)]);
+                group.appendChild(blob);
+            }
+
+            return group;
+        }
+
+        function checkCollision(a, b) {
+            const dx = a.x - b.x;
+            const dy = a.y - b.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            return distance < (a.radius + b.radius);
+        }
+
+        function enforceContainment(kernel, isPopped = false) {
+            const radius = isPopped ? kernel.radius : 3;
+            
+            if (kernel.x < BOUNDS.left + radius) {
+                kernel.x = BOUNDS.left + radius;
+                kernel.vx = Math.abs(kernel.vx) * 0.5;
+            }
+            if (kernel.x > BOUNDS.right - radius) {
+                kernel.x = BOUNDS.right - radius;
+                kernel.vx = -Math.abs(kernel.vx) * 0.5;
+            }
+            if (kernel.y < BOUNDS.top + radius) {
+                kernel.y = BOUNDS.top + radius;
+                kernel.vy = Math.abs(kernel.vy) * 0.5;
+            }
+            if (kernel.y > BOUNDS.bottom - radius) {
+                kernel.y = BOUNDS.bottom - radius;
+                kernel.vy = -Math.abs(kernel.vy) * 0.5;
+            }
+        }
+
+        function applyFriction(kernel) {
+            if (Math.abs(kernel.y - BOUNDS.bottom) < kernel.radius) {
+                kernel.vx *= FRICTION;
+            }
+        }
+
+        function resolveCollision(a, b) {
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance === 0) {
+                a.x -= 0.1;
+                b.x += 0.1;
+                return;
+            }
+            
+            const overlap = (a.radius + b.radius) - distance;
+            
+            if (overlap > 0) {
+                const nx = dx / distance;
+                const ny = dy / distance;
+                
+                const separationX = nx * overlap / 2;
+                const separationY = ny * overlap / 2;
+                
+                a.x -= separationX;
+                a.y -= separationY;
+                b.x += separationX;
+                b.y += separationY;
+                
+                const relativeVelocityX = b.vx - a.vx;
+                const relativeVelocityY = b.vy - a.vy;
+                const velocityAlongNormal = relativeVelocityX * nx + relativeVelocityY * ny;
+                
+                if (velocityAlongNormal > 0) return;
+                
+                const restitution = 0.3;
+                const impulse = -(1 + restitution) * velocityAlongNormal / (1/a.radius + 1/b.radius);
+                
+                const impulseX = impulse * nx;
+                const impulseY = impulse * ny;
+                
+                a.vx -= impulseX / a.radius * KERNEL_FRICTION;
+                a.vy -= impulseY / a.radius * KERNEL_FRICTION;
+                b.vx += impulseX / b.radius * KERNEL_FRICTION;
+                b.vy += impulseY / b.radius * KERNEL_FRICTION;
+                
+                a.vx *= ROTATION_DAMPING;
+                a.vy *= ROTATION_DAMPING;
+                b.vx *= ROTATION_DAMPING;
+                b.vy *= ROTATION_DAMPING;
+            }
+        }
+
+        function popKernel(kernel) {
+            kernel.popped = true;
+            svg.removeChild(kernel.element);
+            const poppedShape = createPoppedShape();
+            svg.appendChild(poppedShape);
+            kernel.element = poppedShape;
+            kernel.radius = 12;
+            poppedKernels.push(kernel);
+        }
+
+        function applyStabilization(kernel) {
+            if (Math.abs(kernel.vx) < VELOCITY_THRESHOLD && 
+                Math.abs(kernel.vy) < VELOCITY_THRESHOLD &&
+                Math.abs(kernel.y - BOUNDS.bottom) < kernel.radius * 2) {
+                kernel.vx = 0;
+                kernel.vy = 0;
+            }
+        }
+
+        function animate() {
+            heatingTime++;
+
+            kernels.forEach(kernel => {
+                if (!kernel.popped) {
+                    kernel.vy += GRAVITY;
+                    kernel.x += kernel.vx;
+                    kernel.y += kernel.vy;
+
+                    enforceContainment(kernel);
+                    applyFriction(kernel);
+
+                    kernel.element.setAttribute("cx", kernel.x);
+                    kernel.element.setAttribute("cy", kernel.y);
+                }
+            });
+
+            poppedKernels.forEach(kernel => {
+                if (Math.abs(kernel.vx) > VELOCITY_THRESHOLD || Math.abs(kernel.vy) > VELOCITY_THRESHOLD) {
+                    kernel.vx *= DAMPING;
+                    kernel.vy *= DAMPING;
+                    kernel.vy += GRAVITY * 0.5;
+                    
+                    if (Math.abs(kernel.vx) > VELOCITY_THRESHOLD) {
+                        kernel.x += kernel.vx;
+                    }
+                    if (Math.abs(kernel.vy) > VELOCITY_THRESHOLD) {
+                        kernel.y += kernel.vy;
+                    }
+
+                    enforceContainment(kernel, true);
+                    applyFriction(kernel);
+                    applyStabilization(kernel);
+                } else {
+                    kernel.vx = 0;
+                    kernel.vy = 0;
+                }
+
+                kernel.element.setAttribute("transform", `translate(${kernel.x},${kernel.y})`);
+            });
+
+            for (let i = 0; i < poppedKernels.length; i++) {
+                for (let j = i + 1; j < poppedKernels.length; j++) {
+                    if (checkCollision(poppedKernels[i], poppedKernels[j])) {
+                        resolveCollision(poppedKernels[i], poppedKernels[j]);
+                    }
+                }
+            }
+
+            kernels.forEach(kernel => {
+                if (!kernel.popped && kernel.y >= BOUNDS.bottom - 5 && Math.random() < 0.001 * (heatingTime / 60)) {
+                    popKernel(kernel);
+                    kernel.vx = (Math.random() - 0.5) * EXPLOSION_HORIZONTAL_FORCE;
+                    kernel.vy = -Math.random() * EXPLOSION_VERTICAL_FORCE - 10;
+                }
+            });
+
+            animationId = requestAnimationFrame(animate);
+        }
+
+        function startMicrowave() {
+            button.disabled = true;
+            heatingTime = 0;
+            animate();
+            setTimeout(() => {
+                cancelAnimationFrame(animationId);
+                button.disabled = false;
+            }, 60000);
+        }
+
+        // Initialize kernels
+        for (let i = 0; i < 80; i++) {
+            kernels.push(createKernel(
+                Math.random() * (BOUNDS.right - BOUNDS.left - 20) + BOUNDS.left + 10,
+                Math.random() * (BOUNDS.bottom - BOUNDS.top - 20) + BOUNDS.top + 10
+            ));
+        }
+
+        button.addEventListener('click', startMicrowave);
+    </script>
+</body>
+</html>
