@@ -21,56 +21,40 @@
     </div>
 
     <script>
+        // First, get all DOM elements
         const svg = document.getElementById('popcorn-container');
         const button = document.getElementById('button');
+        
+        // Define all constants
+        const GRAVITY = 9.8 * 0.1;
+        const DAMPING = 0.95;
+        const VELOCITY_THRESHOLD = 0.1;
+        const FRICTION = 0.9;
+        const SURFACE_FRICTION = 0.7;
+        const KERNEL_FRICTION = 0.8;
+        const ROTATION_DAMPING = 0.85;
+        const STABILITY_THRESHOLD = 0.01;
+        const EXPLOSION_HORIZONTAL_FORCE = 8;
+        const EXPLOSION_VERTICAL_FORCE = 15;
+        const BOUNDS = {
+            left: 5,
+            right: 395,
+            top: 5,
+            bottom: 275,
+            greyAreaTop: 280
+        };
+
+        // Initialize state variables
         const kernels = [];
         const poppedKernels = [];
         let animationId;
         let heatingTime = 0;
 
-        // Physics constants
-        const GRAVITY = 9.8 * 0.1;
-        const DAMPING = 0.98;
-        const VELOCITY_THRESHOLD = 0.05;
-        const FRICTION = 0.92;
-        const SURFACE_FRICTION = 0.75;
-        const KERNEL_FRICTION = 0.85;
-        const ROTATION_DAMPING = 0.9;
-        
-        // Explosion constants
-        const EXPLOSION_HORIZONTAL_FORCE = 8;
-        const EXPLOSION_VERTICAL_FORCE = 15;
-        
-        // Boundary constants
-        const BOUNDS = {
-            left: 5,
-            right: 395,
-            top: 5,
-            bottom: 275
-        };
-
-        function createKernel(x, y) {
-            const kernel = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
-            kernel.setAttribute("cx", x);
-            kernel.setAttribute("cy", y);
-            kernel.setAttribute("rx", 3);
-            kernel.setAttribute("ry", 2);
-            kernel.setAttribute("fill", "#DAA520");
-            svg.appendChild(kernel);
-            
-            return {
-                element: kernel,
-                x: Math.max(BOUNDS.left + 5, Math.min(BOUNDS.right - 5, x)),
-                y: Math.max(BOUNDS.top + 5, Math.min(BOUNDS.bottom - 5, y)),
-                vx: (Math.random() - 0.5) * 2,
-                vy: Math.random() * 2,
-                popped: false,
-                radius: 2
-            };
-        }
-
+        // Define all functions before using them
         function createPoppedShape() {
             const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            group.setAttribute("transform-origin", "0 0");
+            
             const mainBody = document.createElementNS("http://www.w3.org/2000/svg", "path");
             mainBody.setAttribute("d", "M-8,-8 C-4,-12 4,-12 8,-8 C12,-4 12,4 8,8 C4,12 -4,12 -8,8 C-12,4 -12,-4 -8,-8 Z");
             mainBody.setAttribute("fill", "#FFFAF0");
@@ -95,6 +79,26 @@
             return group;
         }
 
+        function createKernel(x, y) {
+            const kernel = document.createElementNS("http://www.w3.org/2000/svg", "ellipse");
+            kernel.setAttribute("cx", x);
+            kernel.setAttribute("cy", y);
+            kernel.setAttribute("rx", 3);
+            kernel.setAttribute("ry", 2);
+            kernel.setAttribute("fill", "#DAA520");
+            svg.appendChild(kernel);
+            
+            return {
+                element: kernel,
+                x: Math.max(BOUNDS.left + 5, Math.min(BOUNDS.right - 5, x)),
+                y: Math.max(BOUNDS.top + 5, Math.min(BOUNDS.bottom - 5, y)),
+                vx: (Math.random() - 0.5) * 2,
+                vy: Math.random() * 2,
+                popped: false,
+                radius: 2
+            };
+        }
+
         function checkCollision(a, b) {
             const dx = a.x - b.x;
             const dy = a.y - b.y;
@@ -104,6 +108,7 @@
 
         function enforceContainment(kernel, isPopped = false) {
             const radius = isPopped ? kernel.radius : 3;
+            const bottomMargin = isPopped ? 2 : 1;
             
             if (kernel.x < BOUNDS.left + radius) {
                 kernel.x = BOUNDS.left + radius;
@@ -117,15 +122,38 @@
                 kernel.y = BOUNDS.top + radius;
                 kernel.vy = Math.abs(kernel.vy) * 0.5;
             }
-            if (kernel.y > BOUNDS.bottom - radius) {
-                kernel.y = BOUNDS.bottom - radius;
-                kernel.vy = -Math.abs(kernel.vy) * 0.5;
+            if (kernel.y + radius > BOUNDS.bottom - bottomMargin) {
+                kernel.y = BOUNDS.bottom - radius - bottomMargin;
+                kernel.vy = -Math.abs(kernel.vy) * 0.7;
+                if (kernel.vy > -2) {
+                    kernel.vy = -2;
+                }
+                kernel.vx *= 0.8;
             }
         }
 
         function applyFriction(kernel) {
             if (Math.abs(kernel.y - BOUNDS.bottom) < kernel.radius) {
                 kernel.vx *= FRICTION;
+            }
+        }
+
+        function applyStabilization(kernel) {
+            if (Math.abs(kernel.vx) < STABILITY_THRESHOLD && 
+                Math.abs(kernel.vy) < STABILITY_THRESHOLD &&
+                Math.abs(kernel.y - BOUNDS.bottom) < kernel.radius * 2) {
+                kernel.vx = 0;
+                kernel.vy = 0;
+                if (kernel.y + kernel.radius > BOUNDS.bottom) {
+                    kernel.y = BOUNDS.bottom - kernel.radius;
+                }
+            }
+            
+            if (Math.abs(kernel.vx) < VELOCITY_THRESHOLD) {
+                kernel.vx *= 0.9;
+            }
+            if (Math.abs(kernel.vy) < VELOCITY_THRESHOLD) {
+                kernel.vy *= 0.9;
             }
         }
 
@@ -185,16 +213,8 @@
             svg.appendChild(poppedShape);
             kernel.element = poppedShape;
             kernel.radius = 12;
+            kernel.element.setAttribute("transform", `translate(${kernel.x},${kernel.y})`);
             poppedKernels.push(kernel);
-        }
-
-        function applyStabilization(kernel) {
-            if (Math.abs(kernel.vx) < VELOCITY_THRESHOLD && 
-                Math.abs(kernel.vy) < VELOCITY_THRESHOLD &&
-                Math.abs(kernel.y - BOUNDS.bottom) < kernel.radius * 2) {
-                kernel.vx = 0;
-                kernel.vy = 0;
-            }
         }
 
         function animate() {
@@ -215,21 +235,29 @@
             });
 
             poppedKernels.forEach(kernel => {
-                if (Math.abs(kernel.vx) > VELOCITY_THRESHOLD || Math.abs(kernel.vy) > VELOCITY_THRESHOLD) {
+                if (Math.abs(kernel.vx) > STABILITY_THRESHOLD || Math.abs(kernel.vy) > STABILITY_THRESHOLD) {
                     kernel.vx *= DAMPING;
                     kernel.vy *= DAMPING;
                     kernel.vy += GRAVITY * 0.5;
                     
-                    if (Math.abs(kernel.vx) > VELOCITY_THRESHOLD) {
+                    if (Math.abs(kernel.vx) > STABILITY_THRESHOLD) {
                         kernel.x += kernel.vx;
                     }
-                    if (Math.abs(kernel.vy) > VELOCITY_THRESHOLD) {
+                    if (Math.abs(kernel.vy) > STABILITY_THRESHOLD) {
                         kernel.y += kernel.vy;
                     }
 
                     enforceContainment(kernel, true);
                     applyFriction(kernel);
                     applyStabilization(kernel);
+
+                    if (kernel.y + kernel.radius > BOUNDS.bottom) {
+                        kernel.y = BOUNDS.bottom - kernel.radius;
+                        kernel.vy = -Math.abs(kernel.vy) * 0.7;
+                        if (kernel.vy > -2) {
+                            kernel.vy = -2;
+                        }
+                    }
                 } else {
                     kernel.vx = 0;
                     kernel.vy = 0;
@@ -242,6 +270,10 @@
                 for (let j = i + 1; j < poppedKernels.length; j++) {
                     if (checkCollision(poppedKernels[i], poppedKernels[j])) {
                         resolveCollision(poppedKernels[i], poppedKernels[j]);
+                        poppedKernels[i].vx *= DAMPING;
+                        poppedKernels[i].vy *= DAMPING;
+                        poppedKernels[j].vx *= DAMPING;
+                        poppedKernels[j].vy *= DAMPING;
                     }
                 }
             }
@@ -267,7 +299,7 @@
             }, 60000);
         }
 
-        // Initialize kernels
+        // Initialize kernels (after all functions are defined)
         for (let i = 0; i < 80; i++) {
             kernels.push(createKernel(
                 Math.random() * (BOUNDS.right - BOUNDS.left - 20) + BOUNDS.left + 10,
@@ -275,6 +307,7 @@
             ));
         }
 
+        // Add event listener last
         button.addEventListener('click', startMicrowave);
     </script>
 </body>
