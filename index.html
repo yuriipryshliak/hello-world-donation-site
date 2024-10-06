@@ -177,6 +177,7 @@
             cursor: pointer;
             background: none;
             border: none;
+            color: black; /* Change the color to black */
         }
         .side-menu ul {
             list-style-type: none;
@@ -556,14 +557,14 @@
                 // Vertical swipe
                 if (startY > endY) { // Swiping up
                     if (phase === 'middle') {
-                        setPhase('upper');
-                    } else if (phase === 'lower') {
+                        setPhase('lower');
+                    } else if (phase === 'upper') {
                         setPhase('middle');
                     }
                 } else if (startY < endY) { // Swiping down
                     if (phase === 'middle') {
-                        setPhase('lower');
-                    } else if (phase === 'upper') {
+                        setPhase('upper');
+                    } else if (phase === 'lower') {
                         setPhase('middle');
                     }
                 }
