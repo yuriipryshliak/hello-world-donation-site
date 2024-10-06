@@ -21,21 +21,25 @@
     </div>
 
     <script>
-        // First, get all DOM elements
+        // Get DOM elements
         const svg = document.getElementById('popcorn-container');
         const button = document.getElementById('button');
         
-        // Define all constants
+        // Constants
         const GRAVITY = 9.8 * 0.1;
         const DAMPING = 0.95;
         const VELOCITY_THRESHOLD = 0.1;
-        const FRICTION = 0.9;
-        const SURFACE_FRICTION = 0.7;
-        const KERNEL_FRICTION = 0.8;
-        const ROTATION_DAMPING = 0.85;
+        const FRICTION = 0.85;
+        const SURFACE_FRICTION = 0.6;
+        const KERNEL_FRICTION = 0.7;
+        const ROTATION_DAMPING = 0.8;
         const STABILITY_THRESHOLD = 0.01;
         const EXPLOSION_HORIZONTAL_FORCE = 8;
         const EXPLOSION_VERTICAL_FORCE = 15;
+        const GREY_AREA_REPULSION = 20;
+        const REST_THRESHOLD = 0.05;
+        const RAW_KERNEL_DAMPING = 0.9;
+        
         const BOUNDS = {
             left: 5,
             right: 395,
@@ -50,7 +54,6 @@
         let animationId;
         let heatingTime = 0;
 
-        // Define all functions before using them
         function createPoppedShape() {
             const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
             group.setAttribute("transform-origin", "0 0");
@@ -95,7 +98,8 @@
                 vx: (Math.random() - 0.5) * 2,
                 vy: Math.random() * 2,
                 popped: false,
-                radius: 2
+                radius: 2,
+                atRest: false
             };
         }
 
@@ -110,6 +114,12 @@
             const radius = isPopped ? kernel.radius : 3;
             const bottomMargin = isPopped ? 2 : 1;
             
+            if (kernel.y + radius > BOUNDS.greyAreaTop) {
+                kernel.y = BOUNDS.greyAreaTop - radius;
+                kernel.vy = -Math.abs(kernel.vy) * 0.8;
+                kernel.vy -= GREY_AREA_REPULSION;
+            }
+
             if (kernel.x < BOUNDS.left + radius) {
                 kernel.x = BOUNDS.left + radius;
                 kernel.vx = Math.abs(kernel.vx) * 0.5;
@@ -122,42 +132,69 @@
                 kernel.y = BOUNDS.top + radius;
                 kernel.vy = Math.abs(kernel.vy) * 0.5;
             }
+            
             if (kernel.y + radius > BOUNDS.bottom - bottomMargin) {
                 kernel.y = BOUNDS.bottom - radius - bottomMargin;
-                kernel.vy = -Math.abs(kernel.vy) * 0.7;
-                if (kernel.vy > -2) {
-                    kernel.vy = -2;
+                
+                if (Math.abs(kernel.vy) < 2) {
+                    kernel.vy *= 0.3;
+                    kernel.vx *= SURFACE_FRICTION;
+                } else {
+                    kernel.vy = -Math.abs(kernel.vy) * (isPopped ? 0.5 : 0.3);
                 }
-                kernel.vx *= 0.8;
+
+                if (Math.abs(kernel.vx) < REST_THRESHOLD && Math.abs(kernel.vy) < REST_THRESHOLD) {
+                    kernel.atRest = true;
+                    kernel.vx = 0;
+                    kernel.vy = 0;
+                }
             }
         }
 
         function applyFriction(kernel) {
-            if (Math.abs(kernel.y - BOUNDS.bottom) < kernel.radius) {
-                kernel.vx *= FRICTION;
+            if (Math.abs(kernel.y - BOUNDS.bottom) < kernel.radius * 2) {
+                kernel.vx *= kernel.popped ? FRICTION : FRICTION * 0.8;
+                if (Math.abs(kernel.vx) < 0.5) {
+                    kernel.vx *= SURFACE_FRICTION;
+                }
             }
         }
 
         function applyStabilization(kernel) {
+            if (kernel.atRest) {
+                kernel.vx = 0;
+                kernel.vy = 0;
+                return;
+            }
+
+            if (!kernel.popped) {
+                kernel.vx *= RAW_KERNEL_DAMPING;
+                kernel.vy *= RAW_KERNEL_DAMPING;
+            }
+
             if (Math.abs(kernel.vx) < STABILITY_THRESHOLD && 
                 Math.abs(kernel.vy) < STABILITY_THRESHOLD &&
                 Math.abs(kernel.y - BOUNDS.bottom) < kernel.radius * 2) {
                 kernel.vx = 0;
                 kernel.vy = 0;
+                kernel.atRest = true;
                 if (kernel.y + kernel.radius > BOUNDS.bottom) {
                     kernel.y = BOUNDS.bottom - kernel.radius;
                 }
             }
             
             if (Math.abs(kernel.vx) < VELOCITY_THRESHOLD) {
-                kernel.vx *= 0.9;
+                kernel.vx *= 0.8;
             }
             if (Math.abs(kernel.vy) < VELOCITY_THRESHOLD) {
-                kernel.vy *= 0.9;
+                kernel.vy *= 0.8;
             }
         }
 
         function resolveCollision(a, b) {
+            a.atRest = false;
+            b.atRest = false;
+
             const dx = b.x - a.x;
             const dy = b.y - a.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
@@ -221,13 +258,16 @@
             heatingTime++;
 
             kernels.forEach(kernel => {
-                if (!kernel.popped) {
-                    kernel.vy += GRAVITY;
+                if (!kernel.popped && !kernel.atRest) {
+                    kernel.vx *= RAW_KERNEL_DAMPING;
+                    kernel.vy = (kernel.vy + GRAVITY) * RAW_KERNEL_DAMPING;
+                    
                     kernel.x += kernel.vx;
                     kernel.y += kernel.vy;
 
                     enforceContainment(kernel);
                     applyFriction(kernel);
+                    applyStabilization(kernel);
 
                     kernel.element.setAttribute("cx", kernel.x);
                     kernel.element.setAttribute("cy", kernel.y);
@@ -235,32 +275,17 @@
             });
 
             poppedKernels.forEach(kernel => {
-                if (Math.abs(kernel.vx) > STABILITY_THRESHOLD || Math.abs(kernel.vy) > STABILITY_THRESHOLD) {
+                if (!kernel.atRest) {
                     kernel.vx *= DAMPING;
                     kernel.vy *= DAMPING;
                     kernel.vy += GRAVITY * 0.5;
                     
-                    if (Math.abs(kernel.vx) > STABILITY_THRESHOLD) {
-                        kernel.x += kernel.vx;
-                    }
-                    if (Math.abs(kernel.vy) > STABILITY_THRESHOLD) {
-                        kernel.y += kernel.vy;
-                    }
+                    kernel.x += kernel.vx;
+                    kernel.y += kernel.vy;
 
                     enforceContainment(kernel, true);
                     applyFriction(kernel);
                     applyStabilization(kernel);
-
-                    if (kernel.y + kernel.radius > BOUNDS.bottom) {
-                        kernel.y = BOUNDS.bottom - kernel.radius;
-                        kernel.vy = -Math.abs(kernel.vy) * 0.7;
-                        if (kernel.vy > -2) {
-                            kernel.vy = -2;
-                        }
-                    }
-                } else {
-                    kernel.vx = 0;
-                    kernel.vy = 0;
                 }
 
                 kernel.element.setAttribute("transform", `translate(${kernel.x},${kernel.y})`);
@@ -270,10 +295,6 @@
                 for (let j = i + 1; j < poppedKernels.length; j++) {
                     if (checkCollision(poppedKernels[i], poppedKernels[j])) {
                         resolveCollision(poppedKernels[i], poppedKernels[j]);
-                        poppedKernels[i].vx *= DAMPING;
-                        poppedKernels[i].vy *= DAMPING;
-                        poppedKernels[j].vx *= DAMPING;
-                        poppedKernels[j].vy *= DAMPING;
                     }
                 }
             }
@@ -283,6 +304,7 @@
                     popKernel(kernel);
                     kernel.vx = (Math.random() - 0.5) * EXPLOSION_HORIZONTAL_FORCE;
                     kernel.vy = -Math.random() * EXPLOSION_VERTICAL_FORCE - 10;
+                    kernel.atRest = false;
                 }
             });
 
@@ -292,6 +314,8 @@
         function startMicrowave() {
             button.disabled = true;
             heatingTime = 0;
+            kernels.forEach(kernel => kernel.atRest = false);
+            poppedKernels.forEach(kernel => kernel.atRest = false);
             animate();
             setTimeout(() => {
                 cancelAnimationFrame(animationId);
@@ -299,7 +323,7 @@
             }, 60000);
         }
 
-        // Initialize kernels (after all functions are defined)
+        // Initialize kernels
         for (let i = 0; i < 80; i++) {
             kernels.push(createKernel(
                 Math.random() * (BOUNDS.right - BOUNDS.left - 20) + BOUNDS.left + 10,
@@ -307,7 +331,6 @@
             ));
         }
 
-        // Add event listener last
         button.addEventListener('click', startMicrowave);
     </script>
 </body>
