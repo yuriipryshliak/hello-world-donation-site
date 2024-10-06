@@ -172,7 +172,7 @@
         <div class="blur-background">
             <div id="microwave">
                 <svg id="popcorn-container" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300">
-                    <rect x="0" y="0" width="400" height="300" fill="none" stroke="#999" stroke-width="1"/>
+                    <rect x="0" y="0" width="400" height="300" fill="#f0f0f0" stroke="#999" stroke-width="1"/>
                     <rect x="0" y="280" width="400" height="20" fill="#999" />
                 </svg>
                 <button id="button">Microwave</button>
@@ -372,9 +372,6 @@
             greyAreaTop: 280
         };
 
-        // Rest of the popcorn game code (same as in the original file)
-        // ... [Insert all the functions from the original popcorn game file here]
-        
         // Initialize game variables
         const kernels = [];
         const poppedKernels = [];
@@ -416,7 +413,7 @@
             kernel.setAttribute("rx", 3);
             kernel.setAttribute("ry", 2);
             kernel.setAttribute("fill", "#DAA520");
-            svg.appendChild(kernel);
+            popcornSvg.appendChild(kernel);
             
             return {
                 element: kernel,
@@ -572,9 +569,9 @@
 
         function popKernel(kernel) {
             kernel.popped = true;
-            svg.removeChild(kernel.element);
+            popcornSvg.removeChild(kernel.element);
             const poppedShape = createPoppedShape();
-            svg.appendChild(poppedShape);
+            popcornSvg.appendChild(poppedShape);
             kernel.element = poppedShape;
             kernel.radius = 12;
             kernel.element.setAttribute("transform", `translate(${kernel.x},${kernel.y})`);
