@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Information</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+            overflow: hidden;
+            height: 100vh;
+        }
+        .content {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            transition: all 0.5s ease;
+            width: 90%;
+            max-width: 600px;
+        }
+        .blur-background {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 10px;
+            transition: background-color 0.3s ease;
+            margin: 0 auto;
+        }
+        .blur-background:hover {
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+        #tree-container {
+            width: 100%;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            transition: all 0.5s ease;
+        }
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+        /* Hamburger menu styles */
+        .hamburger {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 10px;
+        }
+        .hamburger span {
+            display: block;
+            width: 30px;
+            height: 3px;
+            margin: 5px 0;
+            background-color: #333;
+            transition: 0.4s;
+        }
+        .side-menu {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100vh;
+            background: linear-gradient(to bottom, #FFFFFF, #FFFFFF 60%, #E6E2E0);
+            z-index: 1001;
+            transition: 0.4s;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .side-menu.open {
+            right: 0;
+        }
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: black;
+        }
+        .side-menu ul {
+            list-style-type: none;
+            padding: 0;
+            margin-top: 50px;
+        }
+        .side-menu ul li {
+            margin-bottom: 20px;
+        }
+        .side-menu ul li a {
+            color: #333;
+            text-decoration: none;
+            font-size: 1.2em;
+            transition: 0.3s;
+        }
+        .side-menu ul li a:hover {
+            color: #4CAF50;
+        }
+        /* Contact info styles */
+        .contact-info {
+            text-align: left;
+            padding: 20px;
+        }
+        .contact-info h2 {
+            margin-bottom: 20px;
+        }
+        .contact-info p {
+            margin-bottom: 10px;
+        }
+        .contact-info a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        .contact-info a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 600px) {
+            .content {
+                width: 95%;
+            }
+            .side-menu {
+                width: 100%;
+                right: -100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="hamburger" onclick="toggleMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+
+    <div class="side-menu" id="sideMenu">
+        <h2>Contact Information</h2>
+        <button class="close-btn" onclick="toggleMenu()">&times;</button>
+        <ul>
+            <li><a href="index.html">Home</a></li>
+            <li><a href="our-mission.html">Our mission</a></li>
+            <li><a href="contact-info.html">Contact info</a></li>
+        </ul>
+    </div>
+
+    <div class="content">
+        <div class="blur-background">
+            <div class="contact-info">
+                <h2>Contact Information</h2>
+                <p>YouTube: <a href="http://www.youtube.com/@Heart_and_Homeland" target="_blank">@Heart_and_homeland</a></p>
+                <p>Instagram: <a href="https://www.instagram.com/yuriipryshliak/?locale=us" target="_blank">@yuriipryshliak</a></p>
+                <p>Twitter: <a href="https://twitter.com/yuriipryshliak" target="_blank">@yuriipryshliak</a></p>
+                <p>Email: <a href="mailto:yuriipryshliak@outlook.com">yuriipryshliak@outlook.com</a></p>
+            </div>
+        </div>
+    </div>
+    
+    <div id="tree-container">
+        <svg id="tree" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+
+    <script>
+        // Tree generation code (unchanged)
+        const svgNS = "http://www.w3.org/2000/svg";
+        const svg = document.getElementById('tree');
+        let seed = Math.random();
+        let generation = 0;
+        let phase = 'middle';
+        let trees = [];
+
+        function createTree(x, y, scale = 1) {
+            const g = document.createElementNS(svgNS, 'g');
+            g.setAttribute('transform', `translate(${x}, ${y}) scale(${scale})`);
+            svg.appendChild(g);
+
+            branch(g, 200, 0, 0);
+            return g;
+        }
+
+        function branch(parent, len, x, y) {
+            const line = document.createElementNS(svgNS, 'line');
+            line.setAttribute('x1', x);
+            line.setAttribute('y1', y);
+            line.setAttribute('x2', x);
+            line.setAttribute('y2', y - len);
+            line.setAttribute('stroke', 'rgb(70, 40, 20)');
+            line.setAttribute('stroke-width', len * 0.1);
+            parent.appendChild(line);
+
+            const newX = x;
+            const newY = y - len;
+
+            len *= 0.67;
+
+            if (len > 4) {
+                const rightAngle = Math.PI / 6 + (pseudoRandom() * 0.2 - 0.1);
+                const rightG = document.createElementNS(svgNS, 'g');
+                rightG.setAttribute('transform', `translate(${newX}, ${newY}) rotate(${rightAngle * 180 / Math.PI})`);
+                parent.appendChild(rightG);
+                branch(rightG, len, 0, 0);
+
+                const leftAngle = -Math.PI / 4 + (pseudoRandom() * 0.2 - 0.1);
+                const leftG = document.createElementNS(svgNS, 'g');
+                leftG.setAttribute('transform', `translate(${newX}, ${newY}) rotate(${leftAngle * 180 / Math.PI})`);
+                parent.appendChild(leftG);
+                branch(leftG, len, 0, 0);
+
+                if (pseudoRandom() < 0.3) {
+                    const middleAngle = pseudoRandom() * 0.2 - 0.1;
+                    const middleG = document.createElementNS(svgNS, 'g');
+                    middleG.setAttribute('transform', `translate(${newX}, ${newY}) rotate(${middleAngle * 180 / Math.PI})`);
+                    parent.appendChild(middleG);
+                    branch(middleG, len * 0.8, 0, 0);
+                }
+            } else {
+                const r = 80 + pseudoRandom() * 20;
+                const g = 120 + pseudoRandom() * 40;
+                const b = 30 + pseudoRandom() * 20;
+                const leaf = document.createElementNS(svgNS, 'circle');
+                leaf.setAttribute('cx', newX);
+                leaf.setAttribute('cy', newY);
+                leaf.setAttribute('r', 5);
+                leaf.setAttribute('fill', `rgba(${r}, ${g}, ${b}, 0.6)`);
+                parent.appendChild(leaf);
+            }
+        }
+
+        function pseudoRandom() {
+            const x = Math.sin(seed++) * 10000;
+            return x - Math.floor(x);
+        }
+
+        // Phase management
+        function setPhase(newPhase) {
+            const content = document.querySelector('.content');
+            const treeContainer = document.getElementById('tree-container');
+
+            phase = newPhase;
+
+            switch(phase) {
+                case 'upper':
+                    content.style.transform = 'translate(-50%, 50%)';
+                    treeContainer.style.transform = 'translateY(10%) scale(1.1)';
+                    svg.style.pointerEvents = 'auto';
+                    break;
+                case 'middle':
+                    content.style.transform = 'translate(-50%, -50%)';
+                    treeContainer.style.transform = 'translateY(0) scale(1)';
+                    svg.style.pointerEvents = 'none';
+                    break;
+                case 'lower':
+                    content.style.transform = 'translate(-50%, -150%)';
+                    treeContainer.style.transform = 'translateY(-5%) scale(0.9)';
+                    svg.style.pointerEvents = 'none';
+                    break;
+            }
+        }
+
+        // Event handlers
+        function handleWheel(event) {
+            if (event.deltaY > 0) {
+                if (phase === 'middle') {
+                    setPhase('lower');
+                } else if (phase === 'upper') {
+                    setPhase('middle');
+                }
+            } else if (event.deltaY < 0) {
+                if (phase === 'middle') {
+                    setPhase('upper');
+                } else if (phase === 'lower') {
+                    setPhase('middle');
+                }
+            }
+        }
+
+        // Touch events
+        let startX = 0;
+        let startY = 0;
+
+        document.addEventListener('touchstart', (event) => {
+            startX = event.touches[0].clientX;
+            startY = event.touches[0].clientY;
+        });
+
+        document.addEventListener('touchend', (event) => {
+            const endX = event.changedTouches[0].clientX;
+            const endY = event.changedTouches[0].clientY;
+
+            const diffX = Math.abs(startX - endX);
+            const diffY = Math.abs(startY - endY);
+
+            if (diffY > diffX && diffY > 50) {
+                if (startY > endY) {
+                    if (phase === 'middle') {
+                        setPhase('lower');
+                    } else if (phase === 'upper') {
+                        setPhase('middle');
+                    }
+                } else if (startY < endY) {
+                    if (phase === 'middle') {
+                        setPhase('upper');
+                    } else if (phase === 'lower') {
+                        setPhase('middle');
+                    }
+                }
+            }
+        });
+
+        function toggleMenu() {
+            const sideMenu = document.getElementById('sideMenu');
+            sideMenu.classList.toggle('open');
+        }
+
+        window.addEventListener('wheel', handleWheel);
+        window.addEventListener('resize', () => {
+            svg.setAttribute('viewBox', `0 0 ${window.innerWidth} ${window.innerHeight}`);
+        });
+
+        // Initialize
+        setPhase('middle');
+        trees.push(createTree(window.innerWidth / 2, window.innerHeight));
+    </script>
+</body>
+</html>
